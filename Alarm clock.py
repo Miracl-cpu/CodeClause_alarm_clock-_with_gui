@@ -1,79 +1,189 @@
 from tkinter import *
-from tkinter import messagebox
 import time
-import datetime
-import threading
-from tkinter.tix import IMAGETEXT
-from pygame import mixer
+from PIL import ImageTk
+from tkinter import ttk, messagebox
+from playsound import playsound
+import multiprocessing
+from datetime import datetime
+from threading import *
 
-root= Tk()
-root.title("Alarm")
-root.geometry("550x350")
+# Hours List.
+hours_list = ['00', '01', '02', '03', '04', '05', '06', '07',
+        '08', '09', '10', '11', '12', '13', '14', '15',
+        '16', '17', '18', '19', '20', '21', '22', '23', '24']
+
+# Minutes List.
+minutes_list = ['00', '01', '02', '03', '04', '05', '06', '07',
+        '08', '09', '10', '11', '12', '13', '14', '15',
+        '16', '17', '18', '19', '20', '21', '22', '23',
+        '24', '25', '26', '27', '28', '29', '30', '31',
+        '32', '33', '34', '35', '36', '37', '38', '39',
+        '40', '41', '42', '43', '44', '45', '46', '47',
+        '48', '49', '50', '51', '52', '53', '54', '55',
+        '56', '57', '58', '59']
+
+# Ringtones list.
+ringtones_list = ['tone']
+
+# Ringtones Path.
+ringtones_path = {
+    'tone': 'tone.mp3'
+}
+
+# The Class: Alarm Clock.
+class Alarm_Clock:
+    def __init__(self, root):
+        self.window = root
+        self.window.geometry("680x420+0+0")
+        self.window.title("PyClock")
+
+        # Background image of the first window.
+        self.bg_image = ImageTk.PhotoImage(file="al.png")
+        self.background = Label(self.window, image=self.bg_image)
+        self.background.place(x=0,y=0,relwidth=1,relheight=1)
+
+        # Display Label that shows the current time in the
+        # first window
+        self.display = Label(self.window, font=('Helvetica', 34), 
+        bg = 'gray8', fg = 'yellow')
+        self.display.place(x=100,y=150)
+
+        # Calling the the function.
+        self.show_time()
+
+        # Placing the set alarm button. 
+        # Font Type: relief solid font helevetica.
+        set_button = Button(self.window, text="Set Alarm", 
+        font=('Helvetica',15), bg="green", fg="white", 
+        command=self.another_window)
+        set_button.place(x=270, y=220)
+
+    # This function shows the current time in the first window.
+    def show_time(self):
+        current_time = time.strftime('%H:%M:%S %p, %A')
+        # Placing the time format level.
+        self.display.config(text = current_time)
+        self.display.after(100, self.show_time)
+
+    # Another Window: This window will show, when the "Set Alarm"
+    # Button will pressed.
+    def another_window(self):
+        self.window_2 = Tk()
+        self.window_2.title("Set Alarm")
+        self.window_2.geometry("680x420+200+200")
+        
+        # Hour Label.
+        hours_label = Label(self.window_2, text="Hours", 
+        font=("times new roman",20))
+        hours_label.place(x=150, y=50)
+
+        #  Minute Label.
+        minute_label = Label(self.window_2, text="Minutes", 
+        font=("times new roman",20))
+        minute_label.place(x=450, y=50)
+
+        # Hour Combobox.
+        self.hours = StringVar()
+        self.hours_combobox = ttk.Combobox(self.window_2, 
+        width=10, height=10, textvariable=self.hours, 
+        font=("times new roman",15))
+        self.hours_combobox['values'] = hours_list
+        self.hours_combobox.current(0)
+        self.hours_combobox.place(x=150,y=90)
+
+        # Minute Combobox.
+        self.minutes = StringVar()
+        self.minutes_combobox = ttk.Combobox(self.window_2, 
+        width=10, height=10, textvariable=self.minutes, 
+        font=("times new roman",15))
+        self.minutes_combobox['values'] = minutes_list
+        self.minutes_combobox.current(0)
+        self.minutes_combobox.place(x=450,y=90)
+
+        # Ringtone Label.
+        ringtone_label = Label(self.window_2, text="Ringtones", 
+        font=("times new roman",20))
+        ringtone_label.place(x=150, y=130)
+
+        # Ringtone Combobox(Choose the ringtone).
+        self.ringtones = StringVar()
+        self.ringtones_combobox = ttk.Combobox(self.window_2, \
+        width=15, height=10, textvariable=self.ringtones, \
+        font=("times new roman",15))
+        self.ringtones_combobox['values'] = ringtones_list
+        self.ringtones_combobox.current(0)
+        self.ringtones_combobox.place(x=150,y=170)
+
+        # Title or Message Label.
+        message_label = Label(self.window_2, text="Message", 
+        font=("times new roman",20))
+        message_label.place(x=150, y=210)
+
+        # Message Entrybox: This Message will show, when
+        # the alarm will ringing.
+        self.message = StringVar()
+        self.message_entry = Entry(self.window_2, 
+        textvariable=self.message, font=("times new roman",14), width=30)
+        self.message_entry.insert(0, 'Wake Up')
+        self.message_entry.place(x=150, y=250)
+
+        # Test Button: For testing the ringtone music.
+        test_button = Button(self.window_2, text='Test', \
+        font=('Helvetica',15), bg="white", fg="black", command=self.test_window)
+        test_button.place(x=150, y=300)
+
+        # The Cancel Button: For cancel the alarm.
+        cancel_button = Button(self.window_2, 
+        text='Cancel', font=('Helvetica',15), bg="white", \
+        fg="black", command=self.window_2.destroy)
+        cancel_button.place(x=390, y=300)
+
+        # The Start Button: For set the alarm time
+        start_button = Button(self.window_2, text='Start', \
+        font=('Helvetica',15), bg="green", fg="white", command=self.Threading_1)
+        start_button.place(x=490, y=300)
 
 
+        self.window_2.mainloop()
 
-mixer.init()
+# In this function, I have used python multiprocessing module
+# to play the ringtones while the alarm gets notified.
+    def test_window(self):
+        process = multiprocessing.Process(target=playsound, \
+        args=(ringtones_path[self.ringtones_combobox.get()],))
+        process.start()
+        messagebox.showinfo('Playing...', 'press ENTER to stop playing')
+        process.terminate()
 
-def th():
-	t1 = threading.Thread(target=a, args=())
-	t1.start()
+    # Creating a thread
+    def Threading_1(self):
+        x = Thread(target=self.set_alarm_time)
+        x.start()
 
+# This function gets called when the start button pressed 
+# in the another window for setting alarm time.
+    def set_alarm_time(self):
+        alarm_time = f"{self.hours_combobox.get()}:{self.minutes_combobox.get()}"
+        messagebox.showinfo("Alarm Set",f"Alarm set for {alarm_time}")
+        while True:
+            # The current time is in 24 hour format
+            current_time = datetime.now()
+            # Converting the current time into hour and minute
+            current_time_format = current_time.strftime("%H:%M")
+            if current_time_format == alarm_time:
+                process = multiprocessing.Process(target=playsound, \
+                args=(ringtones_path[self.ringtones_combobox.get()],))
+                process.start()
+                # Messagebox: This messagebox will show, when the
+                # alarm will ringing.
+                messagebox.showinfo("Alarm",f"{self.message_entry.get()}, \
+                It's {alarm_time}")
+                process.terminate()
+                break
 
-def a():
-
-	a = hr.get()
-	if a == "":
-		msg = messagebox.showerror('Invalid data','Please enter valid time')
-	else:
-		Alarmtime= a
-		CurrentTime = time.strftime("%H:%M")
-
-		while Alarmtime != CurrentTime:
-			CurrentTime = time.strftime("%H:%M")
-			
-		if Alarmtime == CurrentTime:
-			mixer.music.load('tone.mp3')
-			mixer.music.play()
-			msg = messagebox.showinfo('It is time',f'{amsg.get()}')
-			if msg == 'ok':
-				mixer.music.stop()
-
-
-
-header =Frame(root)
-header.place(x=5,y=5)
-
-head =Label(root,text="ALARM CLOCK",font=('comic sans',20))
-head.pack(fill=X)
-
-panel = Frame(root)
-panel.place(x=5,y=70)
-
-alpp = PhotoImage(file='al.png')
-
-alp = Label(panel,image=alpp)
-alp.grid(rowspan=4,column=0)
-
-
-
-atime = Label(panel,text="Alarm Time \n(Hr:Min)",font=('comic sans',18))
-atime.grid(row=0,column=1,padx=10,pady=5)
-
-hr = Entry(panel,font=('comic sans',20),width=5)
-hr.grid(row=0,column=2,padx=10,pady=5)
-
-amessage = Label(panel,text="Message",font=('comic sans',20))
-amessage.grid(row=1,column=1,columnspan=2,padx=10,pady=5)
-
-amsg = Entry(panel,font=('comic sans',15),width=25)
-amsg.grid(row=2,column=1,columnspan=2,padx=10,pady=5)
-
-
-start = Button(panel,text="Start alarm",font=('comic sans',20),command=th)
-start.grid(row=3,column=1,columnspan=2,padx=10,pady=5)
-
-
-
-
-
-root.mainloop()
+# The main function.
+if __name__ == "__main__":
+    root = Tk()
+    # Object of Alarm_Clock class.
+    obj = Alarm_Clock(root)
+    root.mainloop()
